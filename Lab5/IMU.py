@@ -1,20 +1,4 @@
 #!/usr/bin/python
-#
-#	This program  reads the angles from the acceleromter, gyrscope
-#	and mangnetometeron a BerryIMU connected to a Raspberry Pi.
-#
-#   Both the BerryIMUv1 and BerryIMUv2 are supported
-#
-#	This program includes a number of calculations to improve the
-#	values returned from BerryIMU. If this is new to you, it
-#	may be worthwhile first to look at berryIMU-simple.py, which
-#	has a much more simplified version of code which would be easier
-#	to read.
-#
-#	http://ozzmaker.com/
-
-
-
 import csv
 import time
 import math
@@ -128,35 +112,10 @@ CFangleY = 0.0
 kalmanX = 0.0
 kalmanY = 0.0
 
-a = datetime.datetime.now()
-
-
-################# Compass Calibration values ############
-# Use calibrateBerryIMU.py to get calibration values
-# Calibrating the compass isnt mandatory, however a calibrated
-# compass will result in a more accurate heading values.
-magXmin =  0
-magYmin =  0
-magZmin =  0
-magXmax =  0
-magYmax =  0
-magZmax =  0
-
-'''
-Here is an example:
-magXmin =  -1748
-magYmin =  -1025
-magZmin =  -1876
-magXmax =  959
-magYmax =  1651
-magZmax =  708
-Dont use the above values, these are just an example.
-'''
-
 f = open("output.csv", 'r')
 csvCursor = csv.DictReader(f)
 
-of = open("filter.csv", 'w')
+of = open("filter2.csv", 'w')
 out_csvCursor = csv.writer(of)
 out_csvCursor.writerow(['ACCx angle', 'ACCy angle', 'GRYx Angle', 'GRYy Angle', 'GRYz Angle', 'CFangleX Angle', 'CFangleY Angle', 'kalmanX', 'kalmanY'])
 
@@ -170,14 +129,10 @@ for data in csvCursor:
     GYRy = float(data['GYRy'])
     GYRz = float(data['GYRz'])
 
-
     ##Calculate loop Period(LP). How long between Gyro Reads
-    b = datetime.datetime.now() - a
-    a = datetime.datetime.now()
-    LP = b.microseconds/(1000000*1.0)
-    # print "Loop Time | %5.2f|" % ( LP ),
+    LP = 1.0
 
-
+    GYRx = (GYRx*8.75) / 1000.0 * RAD_TO_DEG
     #Convert Gyro raw to degrees per second
     rate_gyr_x =  GYRx * G_GAIN
     rate_gyr_y =  GYRy * G_GAIN
@@ -194,32 +149,6 @@ for data in csvCursor:
     AccYangle =  (math.atan2(ACCz,ACCx)+M_PI)*RAD_TO_DEG
 
 
-    ####################################################################
-    ######################Correct rotation value########################
-    ####################################################################
-    #Change the rotation value of the accelerometer to -/+ 180 and
-    #move the Y axis '0' point to up.
-    #
-    #Two different pieces of code are used depending on how your IMU is mounted.
-    #If IMU is up the correct way, Skull logo is facing down, Use these lines
-    AccXangle -= 180.0
-    if AccYangle > 90:
-        AccYangle -= 270.0
-    else:
-        AccYangle += 90.0
-    #
-    #
-    #
-    #
-    #If IMU is upside down E.g Skull logo is facing up;
-    #if AccXangle >180:
-        #        AccXangle -= 360.0
-    #AccYangle-=90
-    #if (AccYangle >180):
-        #        AccYangle -= 360.0
-    ############################ END ##################################
-
-
     #Complementary filter used to combine the accelerometer and gyro values.
     CFangleX=AA*(CFangleX+rate_gyr_x*LP) +(1 - AA) * AccXangle
     CFangleY=AA*(CFangleY+rate_gyr_y*LP) +(1 - AA) * AccYangle
@@ -227,19 +156,6 @@ for data in csvCursor:
     #Kalman filter used to combine the accelerometer and gyro values.
     kalmanY = kalmanFilterY(AccYangle, rate_gyr_y,LP)
     kalmanX = kalmanFilterX(AccXangle, rate_gyr_x,LP)
-
-
-    ####################################################################
-    ###################Tilt compensated heading#########################
-    ####################################################################
-    #Normalize accelerometer raw values.
-    accXnorm = ACCx/math.sqrt(ACCx * ACCx + ACCy * ACCy + ACCz * ACCz)
-    accYnorm = ACCy/math.sqrt(ACCx * ACCx + ACCy * ACCy + ACCz * ACCz)
-    ############################ END ##################################
-
-
-
-
 
 
     if 1:			#Change to '0' to stop showing the angles from the accelerometer
@@ -259,9 +175,6 @@ for data in csvCursor:
     print("")
     out_csvCursor.writerow([AccXangle, AccYangle, gyroXangle, gyroYangle, gyroZangle, CFangleX, CFangleY, kalmanX, kalmanY])
 
-
-    #slow program down a bit, makes the output more readable
-    # time.sleep(0.03)
 f.close()
 of.close()
 
