@@ -115,7 +115,7 @@ kalmanY = 0.0
 f = open("output.csv", 'r')
 csvCursor = csv.DictReader(f)
 
-of = open("filter2.csv", 'w')
+of = open("filter.csv", 'w')
 out_csvCursor = csv.writer(of)
 out_csvCursor.writerow(['ACCx angle', 'ACCy angle', 'GRYx Angle', 'GRYy Angle', 'GRYz Angle', 'CFangleX Angle', 'CFangleY Angle', 'kalmanX', 'kalmanY'])
 
